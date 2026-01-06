@@ -31,19 +31,23 @@ let ModuleConfig = {
 };
 
 function main() {
-    // starting text
-    let starting_text = `--[[
-This is a Lua online editor!
-Currently running Lua version 5.4.0
-Source code here: https://github.com/Zeyu-Li/Lua-Online
-]]
+    // starting text - exemplo alterado
+    let starting_text = `-- Lua Online Editor
+-- Exemplo de cálculo da sequência de Fibonacci
 
-function hello_lua()
-  print("Hello World!")
-  return "Hit Ctrl-B to rebuild"
+function fibonacci(n)
+    if n <= 1 then
+        return n
+    end
+    return fibonacci(n-1) + fibonacci(n-2)
 end
 
-return hello_lua()
+print("Sequência de Fibonacci (primeiros 10 números):")
+for i = 0, 9 do
+    print("fib(" .. i .. ") = " .. fibonacci(i))
+end
+
+print("\\nUse Ctrl+B para executar o código!")
 `;
     let myTextarea = document.getElementById("input");
     // console.log(myTextarea)
@@ -66,7 +70,7 @@ return hello_lua()
 // is user presses ctrl-b, then rebuild
 document.addEventListener("keydown", function(e){
     if(e.ctrlKey && e.keyCode == 66) {
-        text_changed(editor.getValue());
+        build();
     }
 });
 // button event listener
