@@ -1,49 +1,298 @@
-<html>
-<meta charset="utf-8">
-
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <!-- meta data -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>Lua Online</title>
-
+    <title>Lua Online — Interface Melhorada</title>
     <meta name="author" content="Andrew Li">
     <meta name="description" content="Lua Online, Run Lua online now">
     <meta name="keywords" content="lua coding online">
-    <meta property="og:image" content="img/ico.svg">
 
-    <!-- Mini icon on tab -->
+    <!-- fav & external assets (mantidos) -->
     <link rel="icon" href="img/ico.svg" type="image/ico">
-    <link rel="stylesheet" href="css/index.css" type="text/css">
-    <!-- code mirror -->
+
+    <!-- CodeMirror (mantido) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css" integrity="sha512-xIf9AdJauwKIVtrVRZ0i4nHP61Ogx9fSRAkCLecmE2dL/U8ioWpDvFCAy4dcfecN72HHB9+7FfQj3aiO68aaaw==" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js" integrity="sha512-zuvaVNiXwWY7U7HEdXsoTislTEElpKLELFoyQw0Bg7zfGhC4vG8eAhCxIQAvHmprW7dFhTq5zshUko4K3B4mSA==" crossorigin="anonymous"></script>
-    <!-- lua theme -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/lua/lua.min.js" integrity="sha512-y9AUtl0J5yAFGJx0mcdHPVsba97LmWZ+00K+w78g3cx9klrn/5joZCH/KegMwhSnliF17Z46A50X773374wA/w==" crossorigin="anonymous"></script>
-    <!-- theme -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/theme/cobalt.min.css" integrity="sha512-dAYwzcmdv0GvCo9UJmVP430Mc9kmvpdDVk/pHNG90qTZR6tpHQlR9BsVdK9ZGpnNtQNVl+j7UQppCwOPN0TTNQ==" crossorigin="anonymous" />
 
-    <!-- Initiates WebAssembly -->
+    <!-- Inicia WebAssembly (mantido) -->
     <script src="webassem.js"></script>
-</head>
 
+    <!-- Fonte e estilos locais -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root{
+            --bg-1: #07070a;
+            --bg-2: #0f1720;
+            --panel: rgba(255,255,255,0.03);
+            --accent: linear-gradient(135deg,#6ea8fe 0%, #5eead4 100%);
+            --muted: rgba(255,255,255,0.06);
+            --glass: rgba(255,255,255,0.04);
+            --radius: 12px;
+            --shadow: 0 6px 18px rgba(2,6,23,0.6);
+        }
+        /* reset básico */
+        *{box-sizing:border-box}
+        html,body{
+            height:100%;
+            margin:0;
+            font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: radial-gradient(1200px 600px at 10% 10%, rgba(94,234,212,0.03), transparent 10%),
+                        linear-gradient(180deg, var(--bg-1), var(--bg-2));
+            color:#e6eef8;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            overflow:hidden;
+        }
+
+        /* layout principal: mantém os elementos #input e #result */
+        .main{
+            display:grid;
+            grid-template-columns: minmax(220px, 1fr) 420px;
+            gap:18px;
+            padding:20px;
+            height:calc(100vh - 20px);
+            align-items:stretch;
+        }
+
+        /* card visual ao redor do editor/result */
+        #input, #result{
+            border-radius: var(--radius);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            box-shadow: var(--shadow);
+            overflow:hidden;
+            border: 1px solid var(--muted);
+            display:flex;
+            flex-direction:column;
+        }
+
+        /* CodeMirror ajustes: ocupa todo o espaço do #input */
+        .CodeMirror {
+            height:100% !important;
+            font-size:15px;
+            background: transparent;
+            color: #dceefd;
+        }
+        .CodeMirror-lines { height:100% }
+        .CodeMirror pre { padding: 12px 14px; }
+
+        /* painel de resultado */
+        #result{
+            padding:14px;
+            min-width:280px;
+            max-width:720px;
+        }
+        #result h3{
+            margin:0 0 8px 0;
+            font-size:14px;
+            font-weight:600;
+            letter-spacing:0.2px;
+            color:#bfe9ff;
+        }
+        #result p#output{
+            margin:0;
+            white-space:pre-wrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+            font-size:13.5px;
+            line-height:1.45;
+            color:#e8f6ff;
+        }
+
+        /* botão flutuante container (mantém ids e estrutura) */
+        .buttons{
+            position:fixed;
+            right:22px;
+            bottom:22px;
+            z-index:60;
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+            align-items:center;
+        }
+        .buttons ul{
+            list-style:none;
+            padding:0;
+            margin:0;
+            display:flex;
+            gap:12px;
+        }
+        .buttons ul li{ display:inline-block }
+
+        /* estilos dos botões (mantendo ids) */
+        .buttons button{
+            width:64px;
+            height:64px;
+            border-radius:16px;
+            border:none;
+            cursor:pointer;
+            display:inline-grid;
+            place-items:center;
+            font-weight:700;
+            color:#052028;
+            box-shadow: 0 8px 22px rgba(2,6,23,0.5);
+            transition:transform .12s ease, box-shadow .12s ease;
+        }
+        .buttons button:active{ transform:translateY(1px) }
+
+        /* cores mantendo o significado original */
+        #build{
+            background: linear-gradient(180deg,#7fb0ff,#5d8ef2);
+            color:#02142a;
+        }
+        #build:hover{ transform: translateY(-4px); box-shadow: 0 18px 30px rgba(42,95,204,0.22) }
+        #download{
+            background: linear-gradient(180deg,#9ef293,#5ee36b);
+            color:#033004;
+        }
+        #download:hover{ transform: translateY(-4px); box-shadow: 0 18px 30px rgba(35,155,69,0.18) }
+
+        /* tooltip-like titles (improve a11y) */
+        .buttons button[title]{
+            position:relative;
+        }
+        .buttons button[title]:hover::after{
+            content: attr(title);
+            position:absolute;
+            bottom: calc(100% + 10px);
+            right:50%;
+            transform:translateX(50%);
+            background: rgba(0,0,0,0.6);
+            color:#fff;
+            padding:6px 10px;
+            border-radius:8px;
+            font-size:12px;
+            white-space:nowrap;
+            box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+        }
+
+        /* barra superior: título e ações de janela (opcional visual) */
+        .topbar{
+            grid-column: 1 / -1;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            padding:8px 20px 0 20px;
+        }
+        .brand{
+            display:flex;
+            gap:12px;
+            align-items:center;
+            color:#dff8ff;
+            font-weight:600;
+            letter-spacing:0.2px;
+        }
+        .brand img{ width:28px; height:28px }
+
+        /* custom scrollbars (apenas para navegadores compatíveis) */
+        #result::-webkit-scrollbar, .CodeMirror-scroll::-webkit-scrollbar { width:10px; height:10px; }
+        #result::-webkit-scrollbar-thumb, .CodeMirror-scroll::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+            border-radius:10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        /* Responsividade */
+        @media (max-width:1000px){
+            .main{ grid-template-columns: 1fr 360px; gap:12px; padding:14px; }
+            #result{ min-width:260px }
+        }
+        @media (max-width:720px){
+            .main{
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 36vh;
+                gap:10px;
+                padding:10px;
+                height:100vh;
+            }
+            .topbar{ display:none }
+            .buttons{
+                right:50%;
+                transform:translateX(50%);
+                bottom:16px;
+                background: transparent;
+                gap:8px;
+            }
+            .buttons ul{ gap:8px }
+            .buttons button{ width:72px; height:52px; border-radius:12px; font-size:15px; }
+            #result{ max-height:36vh; min-width:auto; width:95%; margin:0 auto; border-radius:10px }
+            .CodeMirror { font-size:15px }
+        }
+
+        /* small screens: make editor comfortable to type with larger padding */
+        @media (max-width:420px){
+            .buttons button{ width:66px; height:48px; font-size:14px }
+            .CodeMirror pre{ padding:10px 12px }
+        }
+    </style>
+</head>
 <body>
-    <!-- main code -->
-    <div class="main">
-        <div id="input"></div>
-        <div id="result"><p id="output"></p></div>
+    <!-- topbar (visual apenas, não muda ids principais) -->
+    <div class="topbar" aria-hidden="true">
+        <div class="brand">
+            <img src="img/ico.svg" alt="" />
+            <div>Lua Online</div>
+        </div>
+        <div style="opacity:.9; font-size:13px; color:#bfe9ff">Editor leve • Compatível Desktop & Mobile</div>
     </div>
-    
-    <!-- 3 buttons, 1 (+) add item, 1 (-) remove item, and 1 to enable help -->
-    <div class="buttons">
+
+    <!-- main code: manteve os IDs #input e #result -->
+    <div class="main">
+        <div id="input" aria-label="Editor de código"></div>
+        <div id="result" aria-live="polite" aria-atomic="false">
+            <h3>Saída</h3>
+            <p id="output"></p>
+        </div>
+    </div>
+
+    <!-- botões: mantive ids, atributos download e onclick -->
+    <div class="buttons" role="group" aria-label="Ações">
         <ul>
-            <li id="first"><button id="build" type="button" title="Build" onclick="build()"><b>B</b></button></li>
-            <li id="second"><a id="download_file" download="main.lua"><button id="download" type="button" title="Download" onclick="download()"><b>S+</b></button></a></li>
+            <li id="first">
+                <button id="build" type="button" title="Build" onclick="build()" aria-label="Build">
+                    <b>B</b>
+                </button>
+            </li>
+            <li id="second">
+                <a id="download_file" download="main.lua" href="#" aria-label="Baixar arquivo">
+                    <button id="download" type="button" title="Download" onclick="download()" aria-label="Download">
+                        <b>S+</b>
+                    </button>
+                </a>
+            </li>
         </ul>
     </div>
-    <!-- end of main code -->
+
+    <!-- scripts do projeto (mantidos como estavam) -->
     <script src="code.js"></script>
+
+    <!-- pequena melhoria JS para garantir a largura do iframe/editor em alguns dispositivos -->
+    <script>
+        (function(){
+            // Força rebuild do editor quando a janela muda de tamanho para evitar glitches do CodeMirror
+            let resizeTimeout;
+            function handleResize(){
+                if(window.CodeMirror && window.editorInstance){
+                    // se code.js expuser o editor em editorInstance, refresh
+                    try { window.editorInstance.refresh && window.editorInstance.refresh(); } catch(e){}
+                }
+            }
+            window.addEventListener('resize', ()=> {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(handleResize, 120);
+            });
+
+            // Se o code.js criar o editor de forma assíncrona, tentamos detectar e refrescar logo após carregamento
+            window.addEventListener('load', ()=> {
+                setTimeout(handleResize, 200);
+            });
+        })();
+    </script>
 </body>
 </html>
